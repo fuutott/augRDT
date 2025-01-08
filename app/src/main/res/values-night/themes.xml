@@ -1,0 +1,18 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme using Theme.NoDisplay for night mode -->
+    <style name="Theme.MentraMerge" parent="@android:style/Theme.NoDisplay">
+        <!-- No additional attributes needed for Theme.NoDisplay -->
+    </style>
+
+    <!-- Retain or modify additional styles if necessary -->
+    <style name="Theme.MentraMerge.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <!-- Remove or comment out AppBarOverlay and PopupOverlay if not used -->
+    <!--
+    <style name="Theme.ExampleAugmentosApp.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="Theme.ExampleAugmentosApp.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+    -->
+</resources>

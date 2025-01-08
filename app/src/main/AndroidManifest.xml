@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.DisplayText"
+        tools:targetApi="31">
+
+        <!-- Declare the service that will interact with AugmentOS -->
+        <service android:name="com.mentra.displaytext.DisplayTextService"
+            android:exported="true">
+
+            <!-- Required intent filter to communicate with AugmentOS -->
+            <intent-filter>
+                <action android:name="AUGMENTOS_INTENT" />
+            </intent-filter>
+
+            <!-- Metadata to identify this as an AugmentOS TPA -->
+            <meta-data android:name="com.augmentos.tpa.name" android:value="Display Text" />
+            <meta-data android:name="com.augmentos.tpa.description" android:value="Language learning smart glasses." />
+        </service>
+
+        <!-- (OPTIONAL) Declare an activity to start AugmentOS if this app is started from the launcher -->
+        <activity
+            android:name=".LauncherActivity"
+            android:exported="true"
+            android:theme="@style/Theme.DisplayText.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+    <!-- (OPTIONAL - to launch AugmentOS if this app is launched manually)
+    Declare the target package for launching AugmentOS and web browsers -->
+    <queries>
+        <package android:name="com.teamopensmartglasses.augmentos" />
+
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="augmentos" android:host="open" />
+        </intent>
+
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+</manifest>
