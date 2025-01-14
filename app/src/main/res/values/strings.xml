@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Live Captions</string>
+    <string name="app_name">Display Text</string>
     <string name="key">TEMPORARYKEY_CHANGETHISKEY</string>
     <string name="no_camera_access" translatable="false">Please grant camera permissions.</string>
     <string name="medium_text">text</string>

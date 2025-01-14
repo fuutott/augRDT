@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,6 +31,7 @@ public class LauncherActivity extends AppCompatActivity {
     private void initializeUIComponents() {
         Context mContext = this;
         EditText transcriptionEditText = findViewById(R.id.transcriptionEditText);
+        Button incrementButton = findViewById(R.id.incrementButton);
 
         transcriptionEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -47,6 +49,17 @@ public class LauncherActivity extends AppCompatActivity {
                 String newText = s.toString();
                 Log.d(TAG, "Transcription updated: " + newText);
                 saveTranscription(mContext, newText);
+            }
+        });
+
+        incrementButton.setOnClickListener(v -> {
+            String currentText = transcriptionEditText.getText().toString().trim();
+            if (currentText.matches("\\d+")) { // Check if input is numeric
+                int number = Integer.parseInt(currentText);
+                number++;
+                transcriptionEditText.setText(String.valueOf(number));
+            } else {
+                Log.d(TAG, "Input is not numeric, increment skipped.");
             }
         });
     }
