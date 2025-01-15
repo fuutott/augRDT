@@ -11,6 +11,9 @@ import android.widget.EditText;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class LauncherActivity extends AppCompatActivity {
 
     private static final String TAG = "LauncherActivity";
@@ -54,13 +57,8 @@ public class LauncherActivity extends AppCompatActivity {
 
         incrementButton.setOnClickListener(v -> {
             String currentText = transcriptionEditText.getText().toString().trim();
-            if (currentText.matches("\\d+")) { // Check if input is numeric
-                int number = Integer.parseInt(currentText);
-                number++;
-                transcriptionEditText.setText(String.valueOf(number));
-            } else {
-                Log.d(TAG, "Input is not numeric, increment skipped.");
-            }
+            String updatedText = incrementFirstNumberInText(currentText);
+            transcriptionEditText.setText(updatedText);
         });
     }
 
@@ -72,5 +70,24 @@ public class LauncherActivity extends AppCompatActivity {
                         transcriptionText
                 )
                 .apply();
+    }
+
+    private String incrementFirstNumberInText(String text) {
+        Pattern pattern = Pattern.compile("\\d+"); // Match any sequence of digits
+        Matcher matcher = pattern.matcher(text);
+
+        if (matcher.find()) {
+            String numberStr = matcher.group();
+            int number = Integer.parseInt(numberStr);
+            int incrementedNumber = number + 1;
+
+            // Replace the first occurrence of the number in the text
+            String updatedText = matcher.replaceFirst(String.valueOf(incrementedNumber));
+            Log.d(TAG, "Incremented number: " + number + " -> " + incrementedNumber);
+            return updatedText;
+        } else {
+            Log.d(TAG, "No number found to increment.");
+            return text; // Return the original text if no number is found
+        }
     }
 }
