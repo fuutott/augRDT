@@ -1,3 +1,3 @@
-# Display Text
+# Display Text on Smart Glasses
 
-Input text and display it on the glasses.
+Input text on the phone and display it your smart glasses.
