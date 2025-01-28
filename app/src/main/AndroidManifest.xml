@@ -6,6 +6,7 @@
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
+    <uses-permission android:name="android.permission.RECEIVE_MEDIA_BUTTON" />
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -23,6 +24,7 @@
             <!-- Required intent filter to communicate with AugmentOS -->
             <intent-filter>
                 <action android:name="AUGMENTOS_INTENT" />
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
 
             <!-- Metadata to identify this as an AugmentOS TPA -->

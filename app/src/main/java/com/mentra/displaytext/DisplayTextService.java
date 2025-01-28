@@ -3,8 +3,14 @@ package com.mentra.displaytext;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-
+import android.view.KeyEvent; // Import KeyEvent
+import android.app.Service; // Import Service
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.IBinder; // Import IBinder
 import androidx.preference.PreferenceManager;
+import android.content.BroadcastReceiver;
 
 import com.teamopensmartglasses.augmentoslib.AugmentOSLib;
 import com.teamopensmartglasses.augmentoslib.SmartGlassesAndroidService;
@@ -14,6 +20,17 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Scanner;
+import java.util.UUID;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+
 public class DisplayTextService extends SmartGlassesAndroidService {
     public static final String TAG = "DisplayTextService";
 
@@ -22,6 +39,7 @@ public class DisplayTextService extends SmartGlassesAndroidService {
     ArrayList<String> transcriptsBuffer;
     ArrayList<String> responsesToShare;
     Handler debugTranscriptsHandler = new Handler(Looper.getMainLooper());
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private boolean debugTranscriptsRunning = false;
 
     private DisplayQueue displayQueue;
@@ -32,6 +50,21 @@ public class DisplayTextService extends SmartGlassesAndroidService {
     private final TranscriptProcessor normalTextTranscriptProcessor = new TranscriptProcessor(maxNormalTextCharsPerTranscript);
 
     private String lastKnownInputText = "";  // Track last displayed input
+    private BroadcastReceiver keyEventReceiver; // Declare receiver
+    private enum ViewState { POSTS, COMMENTS }
+    private ViewState currentView = ViewState.POSTS;
+    private int selectedIndex = 0;
+    private List<Post> posts = new ArrayList<>();
+    private List<Comment> comments = new ArrayList<>();
+    private boolean isLoading = false;
+
+    // Media key codes
+    // private static final int MEDIA_PLAY_PAUSE = 85;
+    // private static final int MEDIA_PREVIOUS = 88;
+    // private static final int MEDIA_NEXT = 87;
+    private static final int MEDIA_PLAY_PAUSE = KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE;
+    private static final int MEDIA_PREVIOUS = KeyEvent.KEYCODE_MEDIA_PREVIOUS;
+    private static final int MEDIA_NEXT = KeyEvent.KEYCODE_MEDIA_NEXT;
 
     public DisplayTextService() {
         super();
@@ -43,7 +76,8 @@ public class DisplayTextService extends SmartGlassesAndroidService {
 
         // Initialize AugmentOSLib
         augmentOSLib = new AugmentOSLib(this);
-
+      //  augmentOSLib.subscribe(DataStreamType.GLASSES_SIDE_TAP, this::processSideTap);
+        Log.d(TAG, "init 1");
         // Initialize handlers
         transcribeLanguageCheckHandler = new Handler(Looper.getMainLooper());
 
@@ -51,24 +85,32 @@ public class DisplayTextService extends SmartGlassesAndroidService {
         startUserInputCheckTask();
 
         displayQueue = new DisplayQueue();
-
+        Log.d(TAG, "init 2");
         responsesBuffer = new ArrayList<>();
         responsesToShare = new ArrayList<>();
         responsesBuffer.add("Welcome to AugmentOS.");
         transcriptsBuffer = new ArrayList<>();
-
+        Log.d(TAG, "init 3");
         Log.d(TAG, "Convoscope service started");
-
-        completeInitialization();
+        displayQueue.startQueue();
+        Log.d(TAG, "init 4");
+        //completeInitialization();
+        showLoading();
+        Log.d(TAG, "init 5");
+        fetchPosts();
+        Log.d(TAG, "init 6");
     }
 
     public void completeInitialization() {
         Log.d(TAG, "COMPLETE CONVOSCOPE INITIALIZATION");
-        displayQueue.startQueue();
+
     }
 
     @Override
     public void onDestroy() {
+        if (keyEventReceiver != null) {
+            unregisterReceiver(keyEventReceiver);
+        }
         Log.d(TAG, "onDestroy: Called");
         augmentOSLib.deinit();
 
@@ -89,11 +131,26 @@ public class DisplayTextService extends SmartGlassesAndroidService {
     }
 
     // Renamed method to send text to smart glasses
+
+    public void sendRowsCard(final String[] newLiveCaption) {
+       // String caption = normalTextTranscriptProcessor.processString(newLiveCaption);
+
+        displayQueue.addTask(new DisplayQueue.Task(
+                () -> augmentOSLib.sendRowsCard(newLiveCaption),
+                true, false, true));
+    }
     public void sendTextWallLiveCaption(final String newLiveCaption) {
         String caption = normalTextTranscriptProcessor.processString(newLiveCaption);
 
         displayQueue.addTask(new DisplayQueue.Task(
                 () -> augmentOSLib.sendDoubleTextWall(caption, ""),
+                true, false, true));
+    }
+    public void sendCenteredText(final String newLiveCaption) {
+        String caption = normalTextTranscriptProcessor.processString(newLiveCaption);
+
+        displayQueue.addTask(new DisplayQueue.Task(
+                () -> augmentOSLib.sendCenteredText(caption),
                 true, false, true));
     }
 
@@ -108,7 +165,8 @@ public class DisplayTextService extends SmartGlassesAndroidService {
 
                 if (!currentInputText.equals(lastKnownInputText)) {
                     lastKnownInputText = currentInputText;
-                    sendTextWallLiveCaption(lastKnownInputText);
+                    fetchPosts();
+                    //sendTextWallLiveCaption(lastKnownInputText);
                 }
                 userInputCheckHandler.postDelayed(this, 333);
             }
@@ -184,6 +242,223 @@ public class DisplayTextService extends SmartGlassesAndroidService {
             String finalString = String.join("\n", allLines);
             lines.clear();
             return finalString;
+        }
+
+    }
+    private void handleKeyEvent(int keyCode) {
+        switch (keyCode) {
+            case MEDIA_PREVIOUS:
+                handleUp();
+                break;
+            case MEDIA_NEXT:
+                handleDown();
+                break;
+            case MEDIA_PLAY_PAUSE:
+                handleSelect();
+                break;
+            // ... other key codes
+        }
+    }
+    private void showLoading() {
+        isLoading = true;
+        sendCenteredText("Loading...");
+        Log.d(TAG, "sl 1");
+    }
+
+    private void hideLoading() {
+        isLoading = false;
+    }
+    private void fetchPosts() {
+        Log.d(TAG, "fp 1");
+        new Thread(() -> {
+            try {
+                Log.d(TAG, "fp 2");
+                URL url = new URL("https://www.reddit.com/top.json?limit=20");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestProperty("User-Agent", "AugmentOS-Reddit-Browser/1.0");
+
+                InputStream responseStream = connection.getInputStream();
+                String json = new Scanner(responseStream).useDelimiter("\\A").next();
+
+                JSONObject data = new JSONObject(json).getJSONObject("data");
+                JSONArray children = data.getJSONArray("children");
+                Log.d(TAG, "fp 3");
+                posts.clear();
+                for (int i = 0; i < children.length(); i++) {
+                    JSONObject post = children.getJSONObject(i).getJSONObject("data");
+                    posts.add(new Post(
+                            post.getString("id"),
+                            post.getString("title"),
+                            post.getInt("ups"),
+                            post.getString("permalink")
+                    ));
+                }
+                Log.d(TAG, "fp 4 " + children.length());
+                mainHandler.post(() -> {
+                    Log.d(TAG, "fp 5");
+                    hideLoading();
+                    updatePostsDisplay();
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Error fetching posts: " + e.getMessage());
+                mainHandler.post(() -> sendCenteredText("Error loading posts"));
+            }
+        }).start();
+    }
+
+    private void fetchComments(String permalink) {
+        showLoading();
+        new Thread(() -> {
+            try {
+                URL url = new URL("https://www.reddit.com" + permalink + ".json");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestProperty("User-Agent", "AugmentOS-Reddit-Browser/1.0");
+
+                InputStream responseStream = connection.getInputStream();
+                String json = new Scanner(responseStream).useDelimiter("\\A").next();
+
+                JSONArray responseArray = new JSONArray(json);
+                JSONObject commentsData = responseArray.getJSONObject(1).getJSONObject("data");
+                JSONArray commentsArray = commentsData.getJSONArray("children");
+
+                comments.clear();
+                comments.add(new Comment("Back to posts", 0)); // Back button
+                for (int i = 0; i < commentsArray.length(); i++) {
+                    JSONObject comment = commentsArray.getJSONObject(i).getJSONObject("data");
+                    comments.add(new Comment(
+                            comment.getString("body"),
+                            comment.getInt("ups")
+                    ));
+                }
+
+                mainHandler.post(() -> {
+                    hideLoading();
+                    currentView = ViewState.COMMENTS;
+                    selectedIndex = 0;
+                    updateCommentsDisplay();
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "Error fetching comments: " + e.getMessage());
+                mainHandler.post(() -> sendCenteredText("Error loading comments"));
+            }
+        }).start();
+    }
+    private void updatePostsDisplay() {
+        Log.d(TAG, "upd 1  ");
+        if (isLoading) return;
+        Log.d(TAG, "upd 2  ");
+        List<String> postItems = new ArrayList<>();
+        for (int i = 0; i < posts.size(); i++) {
+            Post post = posts.get(i);
+            String prefix = (i == selectedIndex) ? "> " : "  ";
+            String title = post.title != null ? post.title : ""; // Handle potential null title
+            title = title.length() > 50 ? title.substring(0, 47) + "..." : title;
+
+            String item = prefix + post.ups + " ▲ " + title; // Combine parts
+
+            if (item != null) { // Check if the combined item is null (unlikely, but good to be sure)
+                postItems.add(item);
+            } else {
+                Log.e(TAG, "Item is null!");
+            }
+        }
+        Log.d(TAG, "upd 3  ");
+        if (postItems.size() > 0) { // Make sure the array is not empty or null
+            Log.d(TAG, "upd 4  ");
+            sendRowsCard(postItems.toArray(new String[0]));
+        } else {
+            Log.d(TAG, "upd 5  ");
+            Log.w(TAG, "postItems is empty!");
+            sendCenteredText("No posts to display."); // Or a more user-friendly message
+        }
+    }
+
+    private void updateCommentsDisplay() {
+        if (isLoading) return;
+
+        List<String> commentItems = new ArrayList<>();
+        for (int i = 0; i < comments.size(); i++) {
+            Comment comment = comments.get(i);
+            String prefix = (i == selectedIndex) ? "> " : "  ";
+            String text = comment.text;
+
+            if (i > 0) { // Skip truncating for back button
+                text = text.replaceAll("\n", " ");
+                text = text.length() > 50 ? text.substring(0, 47) + "..." : text;
+            }
+
+            commentItems.add(prefix + comment.ups + " ▼ " + text);
+        }
+        sendRowsCard(commentItems.toArray(new String[0]));
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        super.onBind(intent);
+        return null; // Or return your binder if needed
+    }
+    private void handleUp() {
+        if (selectedIndex > 0) {
+            selectedIndex--;
+            updateDisplay();
+        }
+    }
+
+    private void handleDown() {
+        int maxIndex = currentView == ViewState.POSTS ?
+                posts.size() - 1 : comments.size() - 1;
+        if (selectedIndex < maxIndex) {
+            selectedIndex++;
+            updateDisplay();
+        }
+    }
+
+    private void handleSelect() {
+        if (currentView == ViewState.POSTS) {
+            if (selectedIndex < posts.size()) {
+                fetchComments(posts.get(selectedIndex).permalink);
+            }
+        } else {
+            if (selectedIndex == 0) { // Back to posts
+                currentView = ViewState.POSTS;
+                selectedIndex = 0;
+                updatePostsDisplay();
+            }
+        }
+    }
+
+    private void updateDisplay() {
+        if (currentView == ViewState.POSTS) {
+            updatePostsDisplay();
+        } else {
+            updateCommentsDisplay();
+        }
+    }
+
+    private void processSideTap(int numTaps, boolean sideOfGlasses, long timestamp) {
+        handleSelect();
+    }
+    private static class Post {
+        String id;
+        String title;
+        int ups;
+        String permalink;
+
+        Post(String id, String title, int ups, String permalink) {
+            this.id = id;
+            this.title = title;
+            this.ups = ups;
+            this.permalink = permalink;
+        }
+    }
+
+    private static class Comment {
+        String text;
+        int ups;
+
+        Comment(String text, int ups) {
+            this.text = text;
+            this.ups = ups;
         }
     }
 }
