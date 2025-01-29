@@ -485,7 +485,20 @@ public class augRDT extends SmartGlassesAndroidService {
 
     private void processSideTap(int numTaps, boolean sideOfGlasses, long timestamp) {
         Log.d(TAG, "processSideTap 1  " +numTaps + sideOfGlasses + timestamp);
-        handleSelect();
+        switch (numTaps) {
+            case 1:
+                if(sideOfGlasses){ // 0 for left
+                    handleDown();
+                }
+                else{
+                    handleUp();
+                }
+            case 2:
+                handleSelect();
+                break;
+        }
+
+        //handleSelect();
     }
     private void processRingButton(int buttonId, long time, boolean isDown){
         Log.d(TAG, "processRingButton 1  " +buttonId + isDown + time);
