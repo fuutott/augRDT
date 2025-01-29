@@ -129,7 +129,7 @@ public class augRDT extends SmartGlassesAndroidService {
     }
 
 
-   
+
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         Log.d(TAG, "onKeyDown: Key pressed: " + keyCode);
         handleKeyEvent(keyCode);
