@@ -289,7 +289,7 @@ public class augRDT extends SmartGlassesAndroidService {
         new Thread(() -> {
             try {
                 Log.d(TAG, "fp 2");
-                URL url = new URL("https://www.reddit.com/top.json?limit=20");
+                URL url = new URL("https://www.reddit.com/top.json?limit=20?t=hour");
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestProperty("User-Agent", "AugmentOS-Reddit-Browser/1.0");
 
@@ -487,7 +487,7 @@ public class augRDT extends SmartGlassesAndroidService {
         Log.d(TAG, "processSideTap 1  " +numTaps + sideOfGlasses + timestamp);
         switch (numTaps) {
             case 1:
-                if(sideOfGlasses){ // 0 for left
+                if(sideOfGlasses){ // assuming 0 for left
                     handleDown();
                 }
                 else{
@@ -497,8 +497,6 @@ public class augRDT extends SmartGlassesAndroidService {
                 handleSelect();
                 break;
         }
-
-        //handleSelect();
     }
     private void processRingButton(int buttonId, long time, boolean isDown){
         Log.d(TAG, "processRingButton 1  " +buttonId + isDown + time);
