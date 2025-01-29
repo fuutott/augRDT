@@ -1,4 +1,4 @@
-package com.mentra.displaytext;
+package com.mentra.augRDT;
 
 import android.util.Log;
 

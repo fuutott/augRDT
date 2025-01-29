@@ -1,12 +1,12 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme using Theme.NoDisplay -->
 <!--    <style name="Theme.DisplayText" parent="@android:style/Theme.NoDisplay">-->
-    <style name="Theme.DisplayText" parent="Theme.AppCompat.Light">
+    <style name="Theme.augRDT" parent="Theme.AppCompat.Light">
         <!-- No additional attributes needed for Theme.NoDisplay -->
     </style>
 
     <!-- Retain or modify additional styles if necessary -->
-    <style name="Theme.DisplayText.NoActionBar">
+    <style name="Theme.augRDT.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>

@@ -14,7 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "DisplayText"
+rootProject.name = "augRDT"
 include ':app'
 
 include ':AugmentOSLib'

@@ -1,18 +1,21 @@
-package com.mentra.displaytext;
+package com.mentra.augRDT;
 
+import android.content.Context;
+import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.KeyEvent; // Import KeyEvent
-import android.app.Service; // Import Service
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.IBinder; // Import IBinder
 import androidx.preference.PreferenceManager;
 import android.content.BroadcastReceiver;
+import android.app.Service;
+import android.os.Binder;
+import android.os.IBinder;
 
 import com.teamopensmartglasses.augmentoslib.AugmentOSLib;
+import com.teamopensmartglasses.augmentoslib.DataStreamType;
 import com.teamopensmartglasses.augmentoslib.SmartGlassesAndroidService;
 
 import java.util.ArrayDeque;
@@ -27,12 +30,9 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Scanner;
-import java.util.UUID;
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
 
-public class DisplayTextService extends SmartGlassesAndroidService {
-    public static final String TAG = "DisplayTextService";
+public class augRDT extends SmartGlassesAndroidService {
+    public static final String TAG = "augRDT";
 
     public AugmentOSLib augmentOSLib;
     ArrayList<String> responsesBuffer;
@@ -50,7 +50,7 @@ public class DisplayTextService extends SmartGlassesAndroidService {
     private final TranscriptProcessor normalTextTranscriptProcessor = new TranscriptProcessor(maxNormalTextCharsPerTranscript);
 
     private String lastKnownInputText = "";  // Track last displayed input
-    private BroadcastReceiver keyEventReceiver; // Declare receiver
+  //  private BroadcastReceiver keyEventReceiver; // Declare receiver
     private enum ViewState { POSTS, COMMENTS }
     private ViewState currentView = ViewState.POSTS;
     private int selectedIndex = 0;
@@ -65,9 +65,15 @@ public class DisplayTextService extends SmartGlassesAndroidService {
     private static final int MEDIA_PLAY_PAUSE = KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE;
     private static final int MEDIA_PREVIOUS = KeyEvent.KEYCODE_MEDIA_PREVIOUS;
     private static final int MEDIA_NEXT = KeyEvent.KEYCODE_MEDIA_NEXT;
+    private final IBinder binder = new LocalBinder();
 
-    public DisplayTextService() {
+    public augRDT() {
         super();
+    }
+    public class LocalBinder extends Binder {
+        augRDT getService() {
+            return augRDT.this;
+        }
     }
 
     @Override
@@ -76,13 +82,14 @@ public class DisplayTextService extends SmartGlassesAndroidService {
 
         // Initialize AugmentOSLib
         augmentOSLib = new AugmentOSLib(this);
-      //  augmentOSLib.subscribe(DataStreamType.GLASSES_SIDE_TAP, this::processSideTap);
+        augmentOSLib.subscribe(DataStreamType.GLASSES_SIDE_TAP, this::processSideTap);
+        augmentOSLib.subscribe(DataStreamType.SMART_RING_BUTTON, this::processRingButton);
         Log.d(TAG, "init 1");
         // Initialize handlers
         transcribeLanguageCheckHandler = new Handler(Looper.getMainLooper());
 
         // Start periodic tasks
-        startUserInputCheckTask();
+        //startUserInputCheckTask();
 
         displayQueue = new DisplayQueue();
         Log.d(TAG, "init 2");
@@ -99,18 +106,45 @@ public class DisplayTextService extends SmartGlassesAndroidService {
         Log.d(TAG, "init 5");
         fetchPosts();
         Log.d(TAG, "init 6");
+        /* keyEventReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.d(TAG, "kmb0");
+                if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
+                    Log.d(TAG, "kmb1");
+                    KeyEvent event = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+                    Log.d(TAG, "kmb2");
+                    if (event != null && event.getAction() == KeyEvent.ACTION_DOWN) {
+                        int keyCode = event.getKeyCode();
+                        Log.d(TAG, "kmb3" + keyCode);
+                        Log.d(TAG, "Key pressed: " + keyCode);
+                        handleKeyEvent(keyCode);
+                    }
+                }
+            }
+        };
+        IntentFilter filter = new IntentFilter(Intent.ACTION_MEDIA_BUTTON);
+        registerReceiver(keyEventReceiver, filter);
+         */
     }
 
-    public void completeInitialization() {
-        Log.d(TAG, "COMPLETE CONVOSCOPE INITIALIZATION");
 
+   
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        Log.d(TAG, "onKeyDown: Key pressed: " + keyCode);
+        handleKeyEvent(keyCode);
+        return true;
     }
-
     @Override
+
+
     public void onDestroy() {
-        if (keyEventReceiver != null) {
+/*
+       if (keyEventReceiver != null) {
             unregisterReceiver(keyEventReceiver);
         }
+
+*/
         Log.d(TAG, "onDestroy: Called");
         augmentOSLib.deinit();
 
@@ -154,24 +188,6 @@ public class DisplayTextService extends SmartGlassesAndroidService {
                 true, false, true));
     }
 
-    private void startUserInputCheckTask() {
-        userInputCheckHandler = new Handler(Looper.getMainLooper());
-        userInputCheckHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                String currentInputText = PreferenceManager
-                        .getDefaultSharedPreferences(getApplicationContext())
-                        .getString(getString(R.string.SHARED_PREF_TRANSCRIPTION_TEXT), "");
-
-                if (!currentInputText.equals(lastKnownInputText)) {
-                    lastKnownInputText = currentInputText;
-                    fetchPosts();
-                    //sendTextWallLiveCaption(lastKnownInputText);
-                }
-                userInputCheckHandler.postDelayed(this, 333);
-            }
-        }, 0);
-    }
 
     public static class TranscriptProcessor {
         private final int maxCharsPerLine;
@@ -268,7 +284,7 @@ public class DisplayTextService extends SmartGlassesAndroidService {
     private void hideLoading() {
         isLoading = false;
     }
-    private void fetchPosts() {
+    public void fetchPosts() {
         Log.d(TAG, "fp 1");
         new Thread(() -> {
             try {
@@ -345,9 +361,25 @@ public class DisplayTextService extends SmartGlassesAndroidService {
     }
     private void updatePostsDisplay() {
         Log.d(TAG, "upd 1  ");
-        if (isLoading) return;
+        if (isLoading || posts.isEmpty()) return;
         Log.d(TAG, "upd 2  ");
+
+        if (selectedIndex >= posts.size()) {
+            selectedIndex = posts.size() - 1; // Prevent index out of bounds
+        }
+        if (selectedIndex < 0) {
+            selectedIndex = 0; // Prevent negative index
+        }
+
+        Post post = posts.get(selectedIndex);
+        String displayText = post.title + "\n" + post.ups + " ▲"; // Combine title and ups
+        sendTextWallLiveCaption(displayText);
+
+
+/*
         List<String> postItems = new ArrayList<>();
+
+
         for (int i = 0; i < posts.size(); i++) {
             Post post = posts.get(i);
             String prefix = (i == selectedIndex) ? "> " : "  ";
@@ -362,6 +394,8 @@ public class DisplayTextService extends SmartGlassesAndroidService {
                 Log.e(TAG, "Item is null!");
             }
         }
+
+
         Log.d(TAG, "upd 3  ");
         if (postItems.size() > 0) { // Make sure the array is not empty or null
             Log.d(TAG, "upd 4  ");
@@ -371,11 +405,23 @@ public class DisplayTextService extends SmartGlassesAndroidService {
             Log.w(TAG, "postItems is empty!");
             sendCenteredText("No posts to display."); // Or a more user-friendly message
         }
+*/
     }
 
     private void updateCommentsDisplay() {
-        if (isLoading) return;
+        if (isLoading || comments.isEmpty()) return;
+        if (selectedIndex >= comments.size()) {
+            selectedIndex = comments.size() - 1;
+        }
+        if (selectedIndex < 0) {
+            selectedIndex = 0;
+        }
 
+        Comment comment = comments.get(selectedIndex);
+        String displayText = comment.text + "\n" + comment.ups + " ▼";
+        sendTextWallLiveCaption(displayText);
+
+/*
         List<String> commentItems = new ArrayList<>();
         for (int i = 0; i < comments.size(); i++) {
             Comment comment = comments.get(i);
@@ -390,6 +436,8 @@ public class DisplayTextService extends SmartGlassesAndroidService {
             commentItems.add(prefix + comment.ups + " ▼ " + text);
         }
         sendRowsCard(commentItems.toArray(new String[0]));
+ */
+
     }
 
     @Override
@@ -436,7 +484,11 @@ public class DisplayTextService extends SmartGlassesAndroidService {
     }
 
     private void processSideTap(int numTaps, boolean sideOfGlasses, long timestamp) {
+        Log.d(TAG, "processSideTap 1  " +numTaps + sideOfGlasses + timestamp);
         handleSelect();
+    }
+    private void processRingButton(int buttonId, long time, boolean isDown){
+        Log.d(TAG, "processRingButton 1  " +buttonId + isDown + time);
     }
     private static class Post {
         String id;

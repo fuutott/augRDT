@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Display Text</string>
+    <string name="app_name">augRDT</string>
     <string name="key">TEMPORARYKEY_CHANGETHISKEY</string>
     <string name="no_camera_access" translatable="false">Please grant camera permissions.</string>
     <string name="medium_text">text</string>
@@ -28,5 +28,5 @@
     <string name="DEFAULT_COMMAND_SET_SHARED_PREF_KEY">default_command_set_key</string>
 
     <string name="SHARED_PREF_TRANSCRIPTION_TEXT">shared_pref_transcription_text</string>
-
+    <string name="fetch_posts">Fetch Posts</string>
 </resources>

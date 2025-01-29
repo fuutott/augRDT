@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.mentra.displaytext'
+    namespace 'com.mentra.augRDT'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.mentra.displaytext"
+        applicationId "com.mentra.augRDT"
         minSdk 32
         targetSdk 33
         versionCode 1

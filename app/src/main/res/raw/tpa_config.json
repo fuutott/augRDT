@@ -1,4 +1,4 @@
 {
-  "name": "Display Text",
-  "description": "Input text and display it on the glasses."
+  "name": "augRDT",
+  "description": "Reddit client for AugmentOS."
 }

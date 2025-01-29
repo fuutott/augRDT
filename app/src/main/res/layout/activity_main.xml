@@ -1,62 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Title -->
-    <TextView
-        android:id="@+id/displayTextTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Display Text"
-        android:textSize="30sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/textEntryTitle"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"/>
 
-    <!-- Prompt for transcription -->
-    <TextView
-        android:id="@+id/textEntryTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Enter Text:"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toBottomOf="@+id/displayTextTitle"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"/>
-
-    <!-- Multi-line Text Entry for Long Text -->
-    <EditText
-        android:id="@+id/transcriptionEditText"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:inputType="textMultiLine"
-        android:minLines="3"
-        android:gravity="top|start"
-        app:layout_constraintStart_toEndOf="@+id/textEntryTitle"
-        app:layout_constraintTop_toTopOf="@+id/textEntryTitle"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="16dp"/>
-
-    <!-- Increment Button -->
     <Button
-        android:id="@+id/incrementButton"
+        android:id="@+id/fetchPostsButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Increment"
-        app:layout_constraintTop_toBottomOf="@+id/transcriptionEditText"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_centerInParent="true"
+        android:text="@string/fetch_posts"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"/>
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.5" />
 
     <TextView
         android:id="@+id/post_sign_in_message"
@@ -66,8 +27,12 @@
         android:text="Please open AugmentOS to use this app."
         android:textAlignment="center"
         android:textSize="20sp"
-        app:layout_constraintTop_toBottomOf="@+id/incrementButton"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.603"
+        app:layout_constraintStart_toEndOf="@+id/fetchPostsButton"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.571" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
