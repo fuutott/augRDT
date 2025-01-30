@@ -14,9 +14,9 @@ import android.app.Service;
 import android.os.Binder;
 import android.os.IBinder;
 
-import com.teamopensmartglasses.augmentoslib.AugmentOSLib;
-import com.teamopensmartglasses.augmentoslib.DataStreamType;
-import com.teamopensmartglasses.augmentoslib.SmartGlassesAndroidService;
+import com.augmentos.augmentoslib.AugmentOSLib;
+import com.augmentos.augmentoslib.DataStreamType;
+import com.augmentos.augmentoslib.SmartGlassesAndroidService;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class augRDT extends SmartGlassesAndroidService {
 
     private Handler transcribeLanguageCheckHandler;
     private Handler userInputCheckHandler; // Handler for user input checks
-    private final int maxNormalTextCharsPerTranscript = 30;
+    private final int maxNormalTextCharsPerTranscript = 60;
     private final TranscriptProcessor normalTextTranscriptProcessor = new TranscriptProcessor(maxNormalTextCharsPerTranscript);
 
     private String lastKnownInputText = "";  // Track last displayed input
@@ -66,7 +66,26 @@ public class augRDT extends SmartGlassesAndroidService {
     private static final int MEDIA_PREVIOUS = KeyEvent.KEYCODE_MEDIA_PREVIOUS;
     private static final int MEDIA_NEXT = KeyEvent.KEYCODE_MEDIA_NEXT;
     private final IBinder binder = new LocalBinder();
-
+    private final Handler autoScrollHandler = new Handler(Looper.getMainLooper());
+    private final Runnable autoScrollRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Only auto-scroll if we're in the POSTS view
+            if (currentView == ViewState.POSTS && !posts.isEmpty()) {
+                selectedIndex = (selectedIndex + 1) % posts.size(); // loops back to 0 when reaching end
+                updatePostsDisplay();
+            }
+            // Schedule again for 5 seconds later
+            autoScrollHandler.postDelayed(this, 5000);
+        }
+    };
+    private void startAutoScroll() {
+        autoScrollHandler.removeCallbacks(autoScrollRunnable);
+        autoScrollHandler.postDelayed(autoScrollRunnable, 5000);
+    }
+    private void stopAutoScroll() {
+        autoScrollHandler.removeCallbacks(autoScrollRunnable);
+    }
     public augRDT() {
         super();
     }
@@ -145,6 +164,7 @@ public class augRDT extends SmartGlassesAndroidService {
         }
 
 */
+        stopAutoScroll();
         Log.d(TAG, "onDestroy: Called");
         augmentOSLib.deinit();
 
@@ -177,7 +197,7 @@ public class augRDT extends SmartGlassesAndroidService {
         String caption = normalTextTranscriptProcessor.processString(newLiveCaption);
 
         displayQueue.addTask(new DisplayQueue.Task(
-                () -> augmentOSLib.sendDoubleTextWall(caption, ""),
+                () -> augmentOSLib.sendDoubleTextWall(newLiveCaption, ""),
                 true, false, true));
     }
     public void sendCenteredText(final String newLiveCaption) {
@@ -306,7 +326,10 @@ public class augRDT extends SmartGlassesAndroidService {
                             post.getString("id"),
                             post.getString("title"),
                             post.getInt("ups"),
-                            post.getString("permalink")
+                            post.getString("permalink"),
+                            post.getString("subreddit_name_prefixed"),
+                            post.getString("author"),
+                            post.getString("created")
                     ));
                 }
                 Log.d(TAG, "fp 4 " + children.length());
@@ -314,6 +337,7 @@ public class augRDT extends SmartGlassesAndroidService {
                     Log.d(TAG, "fp 5");
                     hideLoading();
                     updatePostsDisplay();
+                    startAutoScroll();
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Error fetching posts: " + e.getMessage());
@@ -372,7 +396,18 @@ public class augRDT extends SmartGlassesAndroidService {
         }
 
         Post post = posts.get(selectedIndex);
-        String displayText = post.title + "\n" + post.ups + " ▲"; // Combine title and ups
+
+        String createdString = post.created;
+        double doubleValue = Double.parseDouble(createdString);
+        long createdTimeSeconds = (long) doubleValue;
+
+        long currentTimeSeconds = System.currentTimeMillis() / 1000L;
+        long diffSeconds = currentTimeSeconds - createdTimeSeconds;
+        long diffHours = diffSeconds / 3600L;
+
+
+
+        String displayText = (selectedIndex + 1) +"/"+ posts.size() +" ▲ " + post.ups + "\n" + post.title + "\n" + diffHours + " hours ago by " +  post.author + "\n to " + post.subreddit_name_prefixed; // Combine title and ups
         sendTextWallLiveCaption(displayText);
 
 
@@ -506,14 +541,21 @@ public class augRDT extends SmartGlassesAndroidService {
         String title;
         int ups;
         String permalink;
-
-        Post(String id, String title, int ups, String permalink) {
+        String subreddit_name_prefixed;
+        String author;
+        String created;
+        Post(String id, String title, int ups, String permalink, String subreddit_name_prefixed, String author, String created) {
             this.id = id;
             this.title = title;
             this.ups = ups;
             this.permalink = permalink;
+            this.subreddit_name_prefixed = subreddit_name_prefixed;
+            this.author = author;
+            this.created = created;
         }
     }
+
+
 
     private static class Comment {
         String text;
