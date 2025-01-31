@@ -407,7 +407,7 @@ public class augRDT extends SmartGlassesAndroidService {
 
 
 
-        String displayText = (selectedIndex + 1) +"/"+ posts.size() +" ▲ " + post.ups + "\n" + post.title + "\n" + diffHours + " hours ago by " +  post.author + "\n to " + post.subreddit_name_prefixed; // Combine title and ups
+        String displayText = (selectedIndex + 1) +"/"+ posts.size() +" ▲ " + post.ups + " in " + post.subreddit_name_prefixed + "\n" + post.title + "\n" + diffHours + " hours ago by " +  post.author; // Combine title and ups
         sendTextWallLiveCaption(displayText);
 
 
