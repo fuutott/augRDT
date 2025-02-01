@@ -1,55 +1,33 @@
 package com.mentra.augRDT;
 
-import android.content.Context;
-import android.content.IntentFilter;
+
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.KeyEvent; // Import KeyEvent
 import android.content.Intent;
 import android.os.IBinder; // Import IBinder
-import androidx.preference.PreferenceManager;
-import android.content.BroadcastReceiver;
-import android.app.Service;
 import android.os.Binder;
-import android.os.IBinder;
-
-import com.augmentos.augmentoslib.AugmentOSLib;
-import com.augmentos.augmentoslib.DataStreamType;
-import com.augmentos.augmentoslib.SmartGlassesAndroidService;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Scanner;
-import com.augmentos.augmentoslib.AugmentOSCommand;
-import com.augmentos.augmentoslib.AugmentOSSettingsManager;
-import com.augmentos.augmentoslib.PhoneNotification;
-import com.augmentos.augmentoslib.SmartGlassesAndroidService;
-import com.augmentos.augmentoslib.DataStreamType;
-import com.augmentos.augmentoslib.FocusStates;
-import com.augmentos.augmentoslib.AugmentOSLib;
-import com.augmentos.augmentoslib.SpeechRecUtils;
-import com.augmentos.augmentoslib.events.NotificationEvent;
-import com.augmentos.augmentoslib.events.SpeechRecOutputEvent;
-import com.augmentos.augmentoslib.events.GlassesTapOutputEvent;
-import com.augmentos.augmentoslib.events.SmartRingButtonOutputEvent;
-import com.augmentos.augmentoslib.events.StartAsrStreamRequestEvent;
-import com.augmentos.augmentoslib.events.StopAsrStreamRequestEvent;
-import com.augmentos.augmentoslib.events.TranslateOutputEvent;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import org.greenrobot.eventbus.Subscribe;
 
-import java.util.Arrays;
-import java.util.List;
+import com.augmentos.augmentoslib.AugmentOSLib;
+import com.augmentos.augmentoslib.DataStreamType;
+import com.augmentos.augmentoslib.SmartGlassesAndroidService;
+import com.augmentos.augmentoslib.events.SpeechRecOutputEvent;
+
 
 public class augRDT extends SmartGlassesAndroidService {
     public static final String TAG = "augRDT";
