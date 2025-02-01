@@ -30,6 +30,26 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Scanner;
+import com.augmentos.augmentoslib.AugmentOSCommand;
+import com.augmentos.augmentoslib.AugmentOSSettingsManager;
+import com.augmentos.augmentoslib.PhoneNotification;
+import com.augmentos.augmentoslib.SmartGlassesAndroidService;
+import com.augmentos.augmentoslib.DataStreamType;
+import com.augmentos.augmentoslib.FocusStates;
+import com.augmentos.augmentoslib.AugmentOSLib;
+import com.augmentos.augmentoslib.SpeechRecUtils;
+import com.augmentos.augmentoslib.events.NotificationEvent;
+import com.augmentos.augmentoslib.events.SpeechRecOutputEvent;
+import com.augmentos.augmentoslib.events.GlassesTapOutputEvent;
+import com.augmentos.augmentoslib.events.SmartRingButtonOutputEvent;
+import com.augmentos.augmentoslib.events.StartAsrStreamRequestEvent;
+import com.augmentos.augmentoslib.events.StopAsrStreamRequestEvent;
+import com.augmentos.augmentoslib.events.TranslateOutputEvent;
+
+import org.greenrobot.eventbus.Subscribe;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class augRDT extends SmartGlassesAndroidService {
     public static final String TAG = "augRDT";
@@ -103,6 +123,9 @@ public class augRDT extends SmartGlassesAndroidService {
         augmentOSLib = new AugmentOSLib(this);
         augmentOSLib.subscribe(DataStreamType.GLASSES_SIDE_TAP, this::processSideTap);
         augmentOSLib.subscribe(DataStreamType.SMART_RING_BUTTON, this::processRingButton);
+        augmentOSLib.requestTranscription("English");
+        //augmentOSLib.requestGlassesSideTaps();
+        //augmentOSLib.requestSmartRingButtonTaps();
         Log.d(TAG, "init 1");
         // Initialize handlers
         transcribeLanguageCheckHandler = new Handler(Looper.getMainLooper());
@@ -147,6 +170,34 @@ public class augRDT extends SmartGlassesAndroidService {
          */
     }
 
+    @Subscribe
+    public void onSpeechTranscriptionTranscript(SpeechRecOutputEvent event) {
+        String text = event.text;
+        String languageCode = event.languageCode;
+        long time = event.timestamp;
+        boolean isFinal = event.isFinal;
+
+
+        if (isFinal) {
+            if(text.toLowerCase().contains("go up")){
+                stopAutoScroll();
+                handleUp();
+            } else if (text.toLowerCase().contains("go down")) {
+                stopAutoScroll();
+                handleDown();
+            } else if (text.toLowerCase().contains("select")) {
+                stopAutoScroll();
+                handleSelect();
+            } else if (text.toLowerCase().contains("go back")) {
+                stopAutoScroll();
+                currentView = ViewState.POSTS;
+                selectedIndex = 0;
+                updatePostsDisplay();
+
+            }
+
+        }
+    }
 
 
     public boolean onKeyDown(int keyCode, KeyEvent event) {
