@@ -349,6 +349,23 @@ public class augRDT extends SmartGlassesAndroidService {
                 JSONArray children = data.getJSONArray("children");
                 Log.d(TAG, "fp 3");
                 posts.clear();
+                String manual = "Autoscroll posts until it hears commands:\n" +
+                        "     Go up\n" +
+                        "     Go down\n" +
+                        "     Select - enter comments\n" +
+                        "     Go back - go back to post list";
+
+                posts.add(new Post(
+                        "augRDT",
+                        manual,
+                        0,
+                        "",
+                        "",
+                        "",
+                        "0"
+                ));
+
+
                 for (int i = 0; i < children.length(); i++) {
                     JSONObject post = children.getJSONObject(i).getJSONObject("data");
                     posts.add(new Post(
@@ -438,18 +455,20 @@ public class augRDT extends SmartGlassesAndroidService {
         }
 
         Post post = posts.get(selectedIndex);
+        String displayText = "";
+        if(selectedIndex !=0) {
+            String createdString = post.created;
+            double doubleValue = Double.parseDouble(createdString);
+            long createdTimeSeconds = (long) doubleValue;
 
-        String createdString = post.created;
-        double doubleValue = Double.parseDouble(createdString);
-        long createdTimeSeconds = (long) doubleValue;
+            long currentTimeSeconds = System.currentTimeMillis() / 1000L;
+            long diffSeconds = currentTimeSeconds - createdTimeSeconds;
+            long diffHours = diffSeconds / 3600L;
 
-        long currentTimeSeconds = System.currentTimeMillis() / 1000L;
-        long diffSeconds = currentTimeSeconds - createdTimeSeconds;
-        long diffHours = diffSeconds / 3600L;
-
-
-
-        String displayText = (selectedIndex + 1) +"/"+ posts.size() +" ▲ " + post.ups + " in " + post.subreddit_name_prefixed + "\n" + post.title + "\n" + diffHours + " hours ago by " +  post.author; // Combine title and ups
+            displayText = (selectedIndex + 1) + "/" + posts.size() + " ▲ " + post.ups + " in " + post.subreddit_name_prefixed + "\n" + post.title + "\n" + diffHours + " hours ago by " + post.author; // Combine title and ups
+        } else {
+            displayText = post.title;
+        }
         sendTextWallLiveCaption(displayText);
 
 
