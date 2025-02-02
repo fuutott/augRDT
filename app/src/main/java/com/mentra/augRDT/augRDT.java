@@ -226,14 +226,14 @@ public class augRDT extends SmartGlassesAndroidService {
         String caption = normalTextTranscriptProcessor.processString(newLiveCaption);
 
         displayQueue.addTask(new DisplayQueue.Task(
-                () -> augmentOSLib.sendDoubleTextWall(newLiveCaption, ""),
+                () -> augmentOSLib.sendTextWall(newLiveCaption),
                 true, false, true));
     }
     public void sendCenteredText(final String newLiveCaption) {
-        String caption = normalTextTranscriptProcessor.processString(newLiveCaption);
+        //String caption = normalTextTranscriptProcessor.processString(newLiveCaption);
 
         displayQueue.addTask(new DisplayQueue.Task(
-                () -> augmentOSLib.sendCenteredText(caption),
+                () -> augmentOSLib.sendTextWall(newLiveCaption),
                 true, false, true));
     }
 
