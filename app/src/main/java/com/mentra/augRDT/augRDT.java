@@ -391,12 +391,25 @@ public class augRDT extends SmartGlassesAndroidService {
                 JSONArray commentsArray = commentsData.getJSONArray("children");
 
                 comments.clear();
-                comments.add(new Comment("Back to posts", 0)); // Back button
+                comments.add(new Comment("Back to posts", "home","0",0)); // Back button
+
                 for (int i = 0; i < commentsArray.length(); i++) {
-                    JSONObject comment = commentsArray.getJSONObject(i).getJSONObject("data");
+                    JSONObject child = commentsArray.getJSONObject(i);
+                    // Only process if this node is a comment (kind = "t1")
+                    if (!child.getString("kind").equals("t1")) {
+                        continue;
+                    }
+                    JSONObject commentData = child.getJSONObject("data");
+                    // Some items (e.g. "more") may not have a body so skip them
+                    if (!commentData.has("body")) {
+                        continue;
+                    }
                     comments.add(new Comment(
-                            comment.getString("body"),
-                            comment.getInt("ups")
+                            commentData.getString("body"),
+                            commentData.getString("author"),
+                            commentData.getString("created"),
+                            commentData.getInt("ups")
+
                     ));
                 }
 
@@ -440,36 +453,6 @@ public class augRDT extends SmartGlassesAndroidService {
         sendTextWallLiveCaption(displayText);
 
 
-/*
-        List<String> postItems = new ArrayList<>();
-
-
-        for (int i = 0; i < posts.size(); i++) {
-            Post post = posts.get(i);
-            String prefix = (i == selectedIndex) ? "> " : "  ";
-            String title = post.title != null ? post.title : ""; // Handle potential null title
-            title = title.length() > 50 ? title.substring(0, 47) + "..." : title;
-
-            String item = prefix + post.ups + " ▲ " + title; // Combine parts
-
-            if (item != null) { // Check if the combined item is null (unlikely, but good to be sure)
-                postItems.add(item);
-            } else {
-                Log.e(TAG, "Item is null!");
-            }
-        }
-
-
-        Log.d(TAG, "upd 3  ");
-        if (postItems.size() > 0) { // Make sure the array is not empty or null
-            Log.d(TAG, "upd 4  ");
-            sendRowsCard(postItems.toArray(new String[0]));
-        } else {
-            Log.d(TAG, "upd 5  ");
-            Log.w(TAG, "postItems is empty!");
-            sendCenteredText("No posts to display."); // Or a more user-friendly message
-        }
-*/
     }
 
     private void updateCommentsDisplay() {
@@ -480,27 +463,26 @@ public class augRDT extends SmartGlassesAndroidService {
         if (selectedIndex < 0) {
             selectedIndex = 0;
         }
-
         Comment comment = comments.get(selectedIndex);
-        String displayText = comment.text + "\n" + comment.ups + " ▼";
+        String displayText = "";
+        if(selectedIndex !=0){
+            String createdString = comment.created;
+            double doubleValue = Double.parseDouble(createdString);
+            long createdTimeSeconds = (long) doubleValue;
+
+            long currentTimeSeconds = System.currentTimeMillis() / 1000L;
+            long diffSeconds = currentTimeSeconds - createdTimeSeconds;
+            long diffHours = diffSeconds / 3600L;
+
+            displayText = (selectedIndex + 1)+ "/" + comments.size() + " " +  comment.author + " " +  comment.ups +" points "+ diffHours + " hours ago\n" + comment.text; // ▲▼
+        } else {
+            displayText = (selectedIndex + 1)+ "/" + comments.size() + " " +comment.text; // ▲▼
+        }
+
+        //String displayText = comment.author + comment.ups + " ▼";
         sendTextWallLiveCaption(displayText);
 
-/*
-        List<String> commentItems = new ArrayList<>();
-        for (int i = 0; i < comments.size(); i++) {
-            Comment comment = comments.get(i);
-            String prefix = (i == selectedIndex) ? "> " : "  ";
-            String text = comment.text;
 
-            if (i > 0) { // Skip truncating for back button
-                text = text.replaceAll("\n", " ");
-                text = text.length() > 50 ? text.substring(0, 47) + "..." : text;
-            }
-
-            commentItems.add(prefix + comment.ups + " ▼ " + text);
-        }
-        sendRowsCard(commentItems.toArray(new String[0]));
- */
 
     }
 
@@ -588,10 +570,14 @@ public class augRDT extends SmartGlassesAndroidService {
 
     private static class Comment {
         String text;
+        String author;
+        String created;
         int ups;
 
-        Comment(String text, int ups) {
+        Comment(String text, String author,String created, int ups) {
             this.text = text;
+            this.author = author;
+            this.created = created;
             this.ups = ups;
         }
     }
